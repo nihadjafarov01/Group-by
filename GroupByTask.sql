@@ -30,9 +30,11 @@ CREATE TABLE Products
 
 CREATE TABLE Selling
 (
+	Id int identity primary key,
     ProductId int REFERENCES Products(Id),
     EmployeeId int REFERENCES Employees(Id),
-    SellingDate datetime DEFAULT getutcdate()
+    SellingDate datetime DEFAULT getutcdate(),
+	Branchİd int REFERENCES Branches(Id)
 )
 
 INSERT INTO Positions(Name)
@@ -70,22 +72,14 @@ VALUES
     ('Grace','Clark','Edward',8,63000),
     ('Logan','Hall','Charles',8,61000)
 
-INSERT INTO Selling (ProductId, EmployeeId)
-VALUES (1,8),
-       (2,9),
-       (3,10),
-       (4,11),
-       (5,12),
-       (6,13)
+INSERT INTO Selling (ProductId, EmployeeId,Branchİd)
+VALUES (1,8,1),
+       (2,8,2),
+       (4,10,3),
+       (4,11,4),
+       (5,12,5),
+       (6,13,6)
 
-ALTER TABLE Selling
-ADD Branchİd int REFERENCES Branches(Id)
-SELECT * FROM Branches
-
-UPDATE Selling
-SET Selling.Branchİd = 6
-WHERE Selling.ProductId = 6
-SELECT * FROM Selling
 ---------------------------------- 1)
 SELECT concat(A.Name,' ',A.Surname) AS Employee, c.Name, d.Name, c.BuyingPrice, c.SellingPrice FROM Employees AS A
 JOIN Selling AS B ON A.Id = B.EmployeeId
@@ -100,3 +94,25 @@ FROM Selling AS A
 JOIN Products AS B ON B.Id = A.ProductId
 WHERE A.SellingDate > DATEADD(MONTH , -1, GETUTCDATE())
 --Tarixi bele yazmagi kecmediyimizin ferqindeyem, basqa yolla yaza bilmedim (
+---------------------------------- 4)
+SELECT A.Id, A.Name, A.Surname, COUNT(B.ProductId) AS ProductCount FROM Employees AS A
+JOIN Selling AS B ON A.Id = B.EmployeeId
+GROUP BY A.Id, A.Name, A.Surname
+---------------------------------- 5)
+SELECT * FROM Branches
+where Id in
+(SELECT Max(Branchİd) AS MaxBranch FROM Selling
+WHERE SellingDate > DATEADD(DAY, -1, GETDATE()))
+---------------------------------- 6)
+SELECT * FROM Selling
+SELECT * FROM Products
+WHERE Id in
+(SELECT ProductId
+FROM Selling
+GROUP BY ProductId
+HAVING COUNT(ProductId) = 
+(SELECT Max(ProductCount) AS MaxCount FROM
+(SELECT ProductId, COUNT(ProductId) AS ProductCount 
+FROM Selling
+WHERE SellingDate > DATEADD(DAY, -1, GETDATE())
+GROUP BY ProductId) AS ProductCount))
